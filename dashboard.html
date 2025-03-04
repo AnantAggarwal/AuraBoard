@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rooms</title>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="library.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            text-align: center;
+        }
+        .room-container {
+            max-width: 400px;
+            margin: 50px auto;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+        }
+        #rooms {
+            height: 300px;
+            overflow-y: auto;
+            padding: 10px;
+            text-align: left;
+        }
+        .room {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 8px;
+            border-radius: 5px;
+            margin: 5px 0;
+            cursor: pointer;
+        }
+        input, button {
+            padding: 10px;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+        }
+        button {
+            background: #ff8c00;
+            color: white;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="room-container">
+        <h2>Available Rooms</h2>
+        <div id="rooms"></div>
+        <input type="text" id="roomNameInput" placeholder="Enter room name to create">
+        <button onclick="createRoom()">Create Room</button>
+        <input type="text" id="joinRoomNameInput" placeholder="Enter room name to join">
+        <button onclick="joinButtonClick()">Join Room</button>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyCMlQATTG9Oi9XZl4ASJ7F6GSb0ivvSphA",
+            authDomain: "auraboard-509c4.firebaseapp.com",
+            projectId: "auraboard-509c4",
+            storageBucket: "auraboard-509c4.firebasestorage.app",
+            messagingSenderId: "460802387618",
+            appId: "1:460802387618:web:7daac98cbc34836784b1fb",
+            measurementId: "G-9LPWFT8C0Q"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+
+        const auth = firebase.auth();
+        let uid = '';
+        let displayName = '';
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                uid = user['_delegate']['uid'];
+                displayName = user['_delegate']['displayName'];
+                displayRooms(); // Call displayRooms here, after uid is set.
+            } else {
+                window.location = "firebase_auth.html";
+            }
+        });
+
+        const db = firebase.firestore();
+        const roomsRef = db.collection("Rooms");
+
+        async function createRoom() {
+            const roomNameInput = document.getElementById("roomNameInput");
+            const roomName = roomNameInput.value.trim();
+            if (roomName !== "") {
+                const roomDoc = await roomsRef.doc(roomName).get();
+                if (roomDoc.exists) {
+                    alert("A room with the same name already exists!");
+                } else {
+                    await roomsRef.doc(roomName).set({});
+                    await joinRoom(roomName);
+                }
+            }
+        }
+
+        async function joinRoom(roomId) {
+            if (confirm("Are you sure you want to join " + roomId + "?")) {
+                try{
+                    //create the entry if the user is new
+                    const user_ref = db.collection("Users").doc(uid);
+                    if(!(user_ref.exists)){
+                        user_ref.set({name: displayName})
+                    }
+
+                    overall_lbd = await getLeaderboard(db, roomId)
+                    console.log(overall_lbd)
+                    overall_lbd = overall_lbd.order
+                    await setPersonalLbd(db, uid, roomId, overall_lbd)
+
+                    const new_member_data = {room: roomId, uid: uid}
+                    const BASE_URL = "https://anantaggarwal.pythonanywhere.com/joinRoom";
+                    const response = await fetch(`${BASE_URL}`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(new_member_data),
+                    });
+                    const result = await response.json();
+                    alert("You successfully join the room!")
+
+                    location.reload()
+                } catch(error) {
+                    console.error("Error entering the room!");
+                    alert("Couldn't join the room. Please try again later!");
+                }
+            }
+        }
+        function joinButtonClick(){
+            joinRoom(document.getElementById("joinRoomNameInput").value);
+        }
+
+        function openRoom(roomId){
+            window.location = "overall_lbd.html?roomId="+roomId;
+        }
+
+        const roomsDiv = document.getElementById("rooms");
+        roomsDiv.innerHTML = "";
+
+        async function displayRooms() {
+            if (!uid) return; // Ensure uid is availableed 
+            const snapshot = await db.collection("Users").doc(uid).collection("Rooms").get();
+            roomsDiv.innerHTML = ""; // Clear existing rooms before adding new ones.
+            snapshot.forEach(doc => {
+                const room = document.createElement("div");
+                room.classList.add("room");
+                room.innerText = doc.id;
+                room.onclick = () => openRoom(doc.id);
+                roomsDiv.appendChild(room);
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="library.js"></script>
+    <title>Editable Leaderboard</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            width: 95%;
+        }
+        table {
+            width: 98%;
+            margin: auto;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid black;
+            padding: 10px;
+            cursor: grab;
+        }
+        th {
+            background-color: #4CAF50;
+            color: white;
+        }
+        tr.dragging {
+            opacity: 0.5;
+        }
+        button {
+            background: #ff8c00;
+            color: white;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h2>Your Personal Leaderboard</h2>
+    <h3>You can drag and drop to change the leaderboard if you wish!</h3>
+    <div class="container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Rank</th>
+                    <th>Name</th>
+                    <th>Score</th>
+                </tr>
+            </thead>
+            <tbody id="leaderboard-body">
+                
+            </tbody>
+        </table>
+        <button onclick="updateLbd()">Save</button>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyCMlQATTG9Oi9XZl4ASJ7F6GSb0ivvSphA",
+            authDomain: "auraboard-509c4.firebaseapp.com",
+            projectId: "auraboard-509c4",
+            storageBucket: "auraboard-509c4.firebasestorage.app",
+            messagingSenderId: "460802387618",
+            appId: "1:460802387618:web:7daac98cbc34836784b1fb",
+            measurementId: "G-9LPWFT8C0Q"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        let uid = '';
+        let leaderboardData = {};
+        const url = new URL(window.location);
+        const room = url.searchParams.get("roomId");
+
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                uid = user.uid;  // Use direct access, not '_delegate'
+                loadLeaderboards();  // Ensure leaderboards load only after UID is available
+            } else {
+                window.location = "firebase_auth.html";
+            }
+        });
+
+        async function loadLeaderboards() {
+            const overallLeaderboard = await getLeaderboard(db, room);
+            const personalLeaderboard = await getPersonalLbd(db, uid, room);
+
+            leaderboardData = overallLeaderboard.data;
+
+            populateLeaderboard( personalLeaderboard, leaderboardData, true);
+
+            const tbody = document.getElementById("leaderboard-body");
+            let draggedRow = null;
+
+            document.querySelectorAll("#leaderboard-body tr").forEach(row => {
+                row.addEventListener("dragstart", (e) => {
+                    draggedRow = row;
+                    setTimeout(() => row.classList.add("dragging"), 0);
+                });
+
+                row.addEventListener("dragend", () => {
+                    draggedRow.classList.remove("dragging");
+                    draggedRow = null;
+                });
+
+                row.addEventListener("dragover", (e) => {
+                    e.preventDefault();
+                    const afterElement = getDragAfterElement(tbody, e.clientY);
+                    if (afterElement && afterElement !== draggedRow) {
+                        tbody.insertBefore(draggedRow, afterElement);
+                    }
+                });
+            });
+
+            function getDragAfterElement(container, y) {
+                const rows = [...container.querySelectorAll("tr:not(.dragging)")];
+                return rows.reduce((closest, child) => {
+                    const box = child.getBoundingClientRect();
+                    const offset = y - box.top - box.height / 2;
+                    return offset < 0 && offset > closest.offset ? { offset, element: child } : closest;
+                }, { offset: Number.NEGATIVE_INFINITY }).element;
+            }
+        }
+
+        async function updateLbd() {
+            const finalOrder = [...document.querySelectorAll("#leaderboard-body tr")].map(row => row.id);
+
+            try {
+                const userRoomRef = db.collection("Users").doc(uid).collection("Rooms").doc(room);
+                await userRoomRef.set({ lbd: finalOrder }, { merge: true });  // FIX: Safe update
+
+                const BASE_URL = "https://anantaggarwal.pythonanywhere.com";
+                const response = await fetch(`${BASE_URL}/updatelbd/${room}`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                });
+
+                const data = await response.json();
+                alert("Your private leaderboard was saved successfully!");
+            } catch (error) {
+                console.error("Error updating leaderboard:", error);
+                alert("There was some error. Please try again later.");
+            }
+        }
+    </script>
+</body>
+</html>
