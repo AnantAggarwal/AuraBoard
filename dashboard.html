@@ -52,12 +52,15 @@
 </head>
 <body>
     <div class="room-container">
-        <h2>Available Rooms</h2>
+        <h2>Your Rooms</h2>
+        <p>Here are your rooms. If empty, you're not in any.</p>
+        <p>Click a room to view the overall leaderboard or edit your private rankings.</p>
         <div id="rooms"></div>
         <input type="text" id="roomNameInput" placeholder="Enter room name to create">
         <button onclick="createRoom()">Create Room</button>
         <input type="text" id="joinRoomNameInput" placeholder="Enter room name to join">
         <button onclick="joinButtonClick()">Join Room</button>
+        <p>Room names are case-sensitive. Enter the exact name to join.</p>
     </div>
 
     <script>
