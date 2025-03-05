@@ -158,6 +158,7 @@
 
                 const data = await response.json();
                 alert("Your private leaderboard was saved successfully!");
+                loadLeaderboards();
             } catch (error) {
                 console.error("Error updating leaderboard:", error);
                 alert("There was some error. Please try again later.");
