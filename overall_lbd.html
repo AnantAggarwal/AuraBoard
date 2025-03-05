@@ -44,6 +44,7 @@
     </style>
 </head>
 <body>
+    <p id="loader"><strong>LOADING....</strong></p>
     <h2>AuraBoard</h2>
     <div class="container">
         <table>
@@ -90,9 +91,14 @@
         const room = url.searchParams.get("roomId");
 
         async function loadLeaderboard() {
+            loader = document.getElementById("loader");
+            loader.style.visibility = "visible";
+
             const leaderboardData = await getLeaderboard(db, room);
             console.log(leaderboardData);
             populateLeaderboard(leaderboardData.order,leaderboardData.data, false);
+
+            loader.style.visibility = "hidden";
         }
 
         loadLeaderboard();

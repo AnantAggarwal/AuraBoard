@@ -52,6 +52,7 @@
 </head>
 <body>
     <div class="room-container">
+        <p id="loader"><strong>LOADING....</strong></p>
         <h2>Your Rooms</h2>
         <p>Here are your rooms. If empty, you're not in any.</p>
         <p>Click a room to view the overall leaderboard or edit your private rankings.</p>
@@ -149,6 +150,8 @@
         roomsDiv.innerHTML = "";
 
         async function displayRooms() {
+            loader = document.getElementById("loader")
+            loader.style.visibility = "visible";
             if (!uid) return; // Ensure uid is availableed 
             const snapshot = await db.collection("Users").doc(uid).collection("Rooms").get();
             roomsDiv.innerHTML = ""; // Clear existing rooms before adding new ones.
@@ -159,6 +162,7 @@
                 room.onclick = () => openRoom(doc.id);
                 roomsDiv.appendChild(room);
             });
+            loader.style.visibility = "hidden";
         }
     </script>
 </body>

@@ -53,6 +53,7 @@
     </style>
 </head>
 <body>
+    <p id="loader"><strong>LOADING....</strong></p>
     <h2>Your Personal Leaderboard</h2>
     <h3>You can drag and drop to change the leaderboard if you wish!</h3>
     <p>Private rankings from all members are averaged to form the overall rankings.</p>
@@ -103,6 +104,9 @@
         });
 
         async function loadLeaderboards() {
+            loader = document.getElementById("loader")
+            loader.style.visibility = "visible";
+
             const overallLeaderboard = await getLeaderboard(db, room);
             const personalLeaderboard = await getPersonalLbd(db, uid, room);
 
@@ -141,9 +145,13 @@
                     return offset < 0 && offset > closest.offset ? { offset, element: child } : closest;
                 }, { offset: Number.NEGATIVE_INFINITY }).element;
             }
+            loader.style.visibility = "hidden";
         }
 
         async function updateLbd() {
+            loader = document.getElementById("loader");
+            loader.style.visibility = "visible";
+
             const finalOrder = [...document.querySelectorAll("#leaderboard-body tr")].map(row => row.id);
 
             try {
@@ -163,6 +171,7 @@
                 console.error("Error updating leaderboard:", error);
                 alert("There was some error. Please try again later.");
             }
+            loader.style.visible = "hidden";
         }
     </script>
 </body>
