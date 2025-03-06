@@ -56,7 +56,7 @@ function populateLeaderboard(order, leaderboardData, draggable) {
             row.innerHTML = `
                 <td>${index + 1}</td>
                 <td>${player.name}</td>
-                <td>${player.score}</td>
+                <td>"hidden"</td>
             `;
 
             fragment.appendChild(row);  // Append to fragment
