@@ -76,6 +76,7 @@
         };
 
         firebase.initializeApp(firebaseConfig);
+        await firebase.firestore().clearPersistence();
 
         const auth = firebase.auth();
         let uid = '';
