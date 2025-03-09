@@ -86,7 +86,11 @@
         };
 
         firebase.initializeApp(firebaseConfig);
-        await firebase.firestore().clearPersistence();
+
+        document.onload = async function(){
+            await firebase.firestore().clearPersistence();
+        }
+
         const auth = firebase.auth();
         const db = firebase.firestore();
 
