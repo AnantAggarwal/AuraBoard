@@ -116,9 +116,13 @@
                         user_ref.set({name: displayName})
                     }
 
-                    overall_lbd = await getLeaderboard(db, roomId)
-                    console.log(overall_lbd)
-                    overall_lbd = overall_lbd.order
+                    var overall_lbd = await getLeaderboard(db, roomId);
+                    console.log(overall_lbd);
+                    overall_lbd = overall_lbd.order;
+                    const index = overall_lbd.indexOf(uid);
+                    if (index > -1) { // only splice array when item is found
+                        overall_lbd.splice(index, 1); // 2nd parameter means remove one item only
+                    }
                     await setPersonalLbd(db, uid, roomId, overall_lbd)
 
                     const new_member_data = {room: roomId, uid: uid}
