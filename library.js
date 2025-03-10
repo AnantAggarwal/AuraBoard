@@ -52,11 +52,17 @@ function populateLeaderboard(order, leaderboardData, draggable) {
             const row = document.createElement("tr");
             row.setAttribute("draggable", draggable.toString()); // Ensure string format
             row.id = player.uid;
+            var score;
+            if(!draggable){
+                score = player.score;
+            }else{
+                score = "hidden";
+            }
 
             row.innerHTML = `
                 <td>${index + 1}</td>
                 <td>${player.name}</td>
-                <td>hidden</td>
+                <td>${score}</td>
             `;
 
             fragment.appendChild(row);  // Append to fragment
